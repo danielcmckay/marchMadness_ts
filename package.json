@@ -1,0 +1,23 @@
+{
+  "name": "marchMadness_ts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "csv-parse": "^4.15.3",
+    "csv-parser": "^3.0.0",
+    "ts-node": "^9.1.1",
+    "tsc": "^1.20150623.0"
+  }
+}
