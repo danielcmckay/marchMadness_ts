@@ -2,40 +2,49 @@ import * as fs from "fs";
 const csvParser = require("csv-parser");
 import teamData from "./output.json";
 import teams2 from "./teams2.json";
-// https://blogs.sas.com/content/sgf/2017/03/13/the-top-10-statistics-to-consider-when-filling-out-your-ncaa-brackets/
+import teams2019 from "./teams2019.json";
+import bb2021 from "./2019_bb.json";
+/// https://blogs.sas.com/content/sgf/2017/03/13/the-top-10-statistics-to-consider-when-filling-out-your-ncaa-brackets/
 
 const results: String[] = [];
+const finalFour = {};
+const scoreToSeed = {};
+const plotly = require('plotly')("danielcmckay", "2XLbIOp3HizFmuOKO1xc")
 
-function buildJson() {
-  fs.createReadStream("./bb.csv")
+
+
+function buildJson(filename : string) {
+  fs.createReadStream(`./${filename}.csv`)
     .pipe(csvParser({ separator: "," }))
     .on("data", (data) => {
       results.push(data);
     })
     .on("end", () => {
-      fs.createWriteStream("./output.json").write(JSON.stringify(results));
+      return fs.createWriteStream(`./${filename}.json`).write(JSON.stringify(results));
     });
 }
 
-function calculateScore(team: object): number {
+function calculateScore(team: object, seed: number): number {
   let score: number = 0;
-
-  score += team != undefined ? Math.floor(team["W-L%"] * 10 * 1.5) : 0;
+  score += team != undefined ? Math.floor(team["W-L%"] * 10)  : 0;
   score += team != undefined ? Math.floor(team["SRS"]) : 0;
-  score += team != undefined ? Math.floor(team["SOS"] * 1) : 0;
+  score += team != undefined ? Math.floor(team["SOS"] * 1 ) : 0;
   score +=
-    team != undefined ? Math.floor((team["Tm."] - team["Opp."]) / team['G']) * 1.25 : 0;
+    team != undefined ? Math.floor(team["Tm."] - team["Opp."]) / team['G']  : 0;
+  score += team != undefined ? Math.floor(team["Home%"] * .10) /2 : 0;
+  score += team != undefined ? Math.floor(team["Road%"] * .10)  : 0;
+  score += team != undefined ? Math.floor((100 - team["TOV%"]) / 10) : 0;
   // assist to turnover ratio
   // road winning percentage
   // ratio of turnovers to turnovers created
   // 3 point shot
   // ft average
   // blocked shots per game
-
-  return score;
+  console.log(`Seed is ${seed}`)
+  scoreToSeed[seed] = score;
+  return Math.floor(score);
 }
 
-const finalFour = {};
 
 function rateTeams(bracket: object, bracketName: string) {
   let newBracket = {};
@@ -50,11 +59,11 @@ function rateTeams(bracket: object, bracketName: string) {
 
     if (Object.keys(bracket).length > 1) {
       const score1 = calculateScore(
-        teamData.filter((team) => team.School == team1)[0]
-      );
+        bb2021.filter((team) => team.School == team1)[0]
+      , teams2019[bracketName][team1]);
       const score2 = calculateScore(
-        teamData.filter((team) => team.School == team2)[0]
-      );
+        bb2021.filter((team) => team.School == team2)[0]
+        , teams2019[bracketName][team2]);
       console.log(`Comparing ${team1} ${score1} and ${team2} ${score2}`);
       if (score1 > score2) {
         console.warn("Winner is " + team1 + " " + score1);
@@ -76,10 +85,21 @@ function rateTeams(bracket: object, bracketName: string) {
   }
 }
 
-Object.values(teams2).forEach((bracket) => {
+function main() {
+  
+}
+
+Object.values(teams2019).forEach((bracket) => {
   rateTeams(
     bracket,
-    Object.keys(teams2)[Object.values(teams2).indexOf(bracket)]
+    Object.keys(teams2019)[Object.values(teams2019).indexOf(bracket)]
   );
 });
-rateTeams(finalFour, "Final Four");
+// rateTeams(finalFour, "Final Four");
+// buildJson("2019_bb");
+// console.log(scoreToSeed);
+// const layout = {fileOpt: "overwrite", "filename": "chart"}
+// plotly.plot([{x: Object.keys(scoreToSeed), y: Object.values(scoreToSeed), type: 'bar'}], layout, (err, msg) => {
+//   if (err) console.log(err)
+//   console.log(msg)
+// })
